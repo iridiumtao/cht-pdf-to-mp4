@@ -1,7 +1,7 @@
 from pathlib import Path
 
 
-def pdf_to_images(pdf_path: Path) -> [str]:
+def pdf_to_images(pdf, pdf_path: Path) -> [str]:
     """
     1. 創一個新資料夾 images
     2. 把PDF轉成圖片檔存入 images
