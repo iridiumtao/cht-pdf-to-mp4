@@ -1,4 +1,8 @@
 from pathlib import Path
+from config.setting import get_settings
+
+settings = get_settings()
+azure_key = settings.azure_key
 
 
 def ocr_image(image_path: Path) -> dict:

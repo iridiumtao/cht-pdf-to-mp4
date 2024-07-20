@@ -10,11 +10,6 @@ from cht_pdf_to_mp4.text_matcher import text_similarity_checker
 from cht_pdf_to_mp4.media_tool import create_video, merge_audio_video
 from cht_pdf_to_mp4.exception import *
 
-from config.setting import get_settings
-
-settings = get_settings()
-azure_key = settings.azure_key
-
 
 def process_ebook(ebook_path: Path, temp_dir: Path, output_dir: Path):
     try:
