@@ -52,3 +52,6 @@
 `conda create --name cht-pdf-to-mp4 python=3.12`
 
 `conda activate cht-pdf-to-mp4`
+
+poppler is required.
+see https://github.com/Belval/pdf2image

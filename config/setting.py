@@ -2,7 +2,7 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    azure_key: str
+    azure_key: str = "xxxxx"
 
     class Config:
         env_file = ".env"

@@ -1,5 +1,11 @@
 # Build-in: FileNotFoundError
 
+class FileNotFoundError(Exception):
+    """Raised when a required file is not found."""
+    def __init__(self, file_path):
+        self.message = f"File not found: {file_path}"
+        super().__init__(self.message)
+
 
 class InvalidFileError(Exception):
     """Raised when a file is invalid or corrupted."""
