@@ -45,3 +45,10 @@
   - 音檔文字
   - 音檔檔名
   - 音檔長度
+
+## Build
+
+
+`conda create --name cht-pdf-to-mp4 python=3.12`
+
+`conda activate cht-pdf-to-mp4`
