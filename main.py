@@ -21,6 +21,9 @@ def process_ebook(ebook_path: Path, temp_dir: Path, output_dir: Path):
         # 轉換PDF為圖片
 
         all_images = pdf_to_images(pdf_dir=temp_dir / "pdf", temp_dir=temp_dir)
+
+        print("print images")
+        print(all_images)
         #
         # # OCR圖片
         # pages_data = {"pages": []}

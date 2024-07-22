@@ -11,7 +11,7 @@ def is_blank_image(image_path: Path) -> bool:
     if image_path.stat().st_size < 20480:  # 20KB
         return True
 
-    img = cv2.imread('img.png', cv2.IMREAD_GRAYSCALE)
+    img = cv2.imread(str(image_path), cv2.IMREAD_GRAYSCALE)
 
     if np.all([img == 255]):
         logger.info(f"Image is white: {image_path}")
@@ -40,8 +40,10 @@ def pdf_to_images(pdf_dir: Path, temp_dir: Path) -> [str]:
                       fmt='jpeg',
                       output_file=f"image")
 
-    # image_files = images_dir.glob(f"pdf_*.png")
-    image_files = images_dir.glob(f"pdf_*.jpg")
+    # image_files = images_dir.glob(f"*.png")
+    image_files = images_dir.glob(f"*.jpg")
+
+    logger.debug(f"Searching for invalid images")
 
     # 刪除檔案大小小於20KB的空白頁
     valid_image_names = []
