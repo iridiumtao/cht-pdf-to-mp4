@@ -2,7 +2,10 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    azure_key: str = "xxxxx"
+    vision_key: str
+    vision_endpoint: str
+    speech_key: str
+    speech_region: str
 
     class Config:
         env_file = ".env"

@@ -22,18 +22,20 @@ def process_ebook(ebook_path: Path, temp_dir: Path, output_dir: Path):
 
         all_images = pdf_to_images(pdf_dir=temp_dir / "pdf", temp_dir=temp_dir)
 
-        print("print images")
-        print(all_images)
-        #
-        # # OCR圖片
-        # pages_data = {"pages": []}
-        # for image in all_images:
-        #     ocr_result = ocr_image(image)
-        #     pages_data["pages"].append({
-        #         "page_number": len(pages_data["pages"]) + 1,
-        #         "image_text": ocr_result.get("text", ""),
-        #         "image_file": str(image),
-        #     })
+        logger.debug(all_images)
+        ocr_image(all_images[0])
+
+        # OCR圖片
+        pages_data = {"pages": []}
+        for image_path in all_images:
+            ocr_result = ocr_image(image_path)
+            pages_data["pages"].append({
+                "page_number": len(pages_data["pages"]) + 1,
+                "image_text": ocr_result,
+                "image_file": str(image_path),
+            })
+
+        logger.info(json.dumps(pages_data, indent=4))
         #
         # # 語音辨識
         # for audio in audio_files:
