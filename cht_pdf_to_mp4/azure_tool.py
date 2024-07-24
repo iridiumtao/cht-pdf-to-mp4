@@ -84,7 +84,7 @@ def ocr_image(image_path: Path) -> str:
         except ComputerVisionOcrErrorException as e:
             logger.error(e)
             logger.info(e.response)
-            if "Too Many Requests" in e.response:
+            if "Too Many Requests" or "429" in e.response:
                 logger.info("Exceeded API rate limit. (Free: 20 requests per minute, Standard: 10 requests per second)")
                 logger.info("Retry after 60 second.")
             time.sleep(60)

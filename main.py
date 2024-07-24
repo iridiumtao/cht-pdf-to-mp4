@@ -15,13 +15,12 @@ import shutil
 def process_ebook(ebook_path: Path, temp_dir: Path, output_dir: Path):
     try:
         # 定義資料夾路徑
-        temp_file = search_dir_and_copy_to_temp(ebook_path, temp_dir)
+        pdf_paths, audio_paths = search_dir_and_copy_to_temp(ebook_path, temp_dir)
 
         # 轉換PDF為圖片
-        all_images = pdf_to_images(pdf_dir=temp_dir / "pdf", temp_dir=temp_dir)
+        all_images = pdf_to_images(pdf_paths=pdf_paths, temp_dir=temp_dir)
 
         logger.debug(all_images)
-        ocr_image(all_images[0])
 
         # OCR圖片
         pages_data = {"pages": []}
@@ -33,13 +32,17 @@ def process_ebook(ebook_path: Path, temp_dir: Path, output_dir: Path):
                 "image_file": str(image_path),
             })
 
-        with open(f'{output_dir}/data.json', 'w') as f:
+        # 確保目錄存在
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        output_file = output_dir / 'image.json'
+        with open(output_file, 'w+') as f:
             json.dump(pages_data, f, indent=4)
         logger.info(json.dumps(pages_data, indent=4))
 
 
         # 語音辨識
-        for audio in temp_file.get("audio"):
+        for audio in audio_paths:
             audio_text = audio_to_text(audio)
             # audio to text 步驟會生成 wav 檔，先暫時直接用
             audio_length = get_audio_length(audio.with_suffix('.wav'))
@@ -48,7 +51,11 @@ def process_ebook(ebook_path: Path, temp_dir: Path, output_dir: Path):
                 "audio_file": str(audio),
                 "audio_length": audio_length,
             })
-        with open(f'{output_dir}/data.json', 'w') as f:
+        # 確保目錄存在
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        output_file = output_dir / 'audio.json'
+        with open(output_file, 'w+') as f:
             json.dump(pages_data, f, indent=4)
         logger.info(json.dumps(pages_data, indent=4))
         #

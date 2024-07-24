@@ -20,7 +20,7 @@ def is_blank_image(image_path: Path) -> bool:
         return False
 
 
-def pdf_to_images(pdf_dir: Path, temp_dir: Path) -> [str]:
+def pdf_to_images(pdf_paths: [str], temp_dir: Path) -> [str]:
     """
     1. 創一個新資料夾 images
     2. 把PDF轉成圖片檔存入 images
@@ -33,12 +33,13 @@ def pdf_to_images(pdf_dir: Path, temp_dir: Path) -> [str]:
     images_dir = temp_dir / 'images'
     images_dir.mkdir(parents=True, exist_ok=True)
 
-    # 把PDF轉成圖片檔存入 images
-    convert_from_path(pdf_dir / "pdf.pdf",
-                      output_folder=images_dir,
-                      # fmt='png',
-                      fmt='jpeg',
-                      output_file=f"image")
+    for pdf_path in pdf_paths:
+        # 把PDF轉成圖片檔存入 images
+        convert_from_path(pdf_path,
+                          output_folder=images_dir,
+                          # fmt='png',
+                          fmt='jpeg',
+                          output_file=f"image")
 
     # image_files = images_dir.glob(f"*.png")
     image_files = images_dir.glob(f"*.jpg")
