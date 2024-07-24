@@ -55,3 +55,5 @@
 
 poppler is required.
 see https://github.com/Belval/pdf2image
+
+ffmpeg is required for pydub to read mp3

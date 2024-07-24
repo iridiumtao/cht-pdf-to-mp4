@@ -15,7 +15,7 @@ def search_dir_and_copy_to_temp(ebook_path: Path, temp_path: Path) -> Path:
         pdf_files = []
         audio_files = []
 
-        logger.debug(f"Reading '{str(ebook_path)}'")
+        logger.info(f"Reading '{str(ebook_path)}'")
 
         # 確保臨時目錄存在
         temp_pdf_path = temp_path / "pdf"

@@ -6,6 +6,10 @@ from azure.cognitiveservices.vision.computervision.models import OperationStatus
 from azure.cognitiveservices.vision.computervision.models import VisualFeatureTypes
 from msrest.authentication import CognitiveServicesCredentials
 
+import azure.cognitiveservices.speech as speechsdk
+
+from pydub import AudioSegment
+
 from array import array
 import os
 from loguru import logger
@@ -74,7 +78,7 @@ def ocr_image(image_path: Path) -> str:
                         # print(line.text)
                         # print(line.bounding_box)
 
-            result = filter_strings_with_alpha(results)
+            result = _filter_strings_with_alpha(results)
 
             logger.debug(f"OCR Result {image_path[-6:-4]}: {result}")
         except ComputerVisionOcrErrorException as e:
@@ -82,7 +86,7 @@ def ocr_image(image_path: Path) -> str:
             logger.info(e.response)
             if "Too Many Requests" in e.response:
                 logger.info("Exceeded API rate limit. (Free: 20 requests per minute, Standard: 10 requests per second)")
-                logger.info("We just retry after 60 second.")
+                logger.info("Retry after 60 second.")
             time.sleep(60)
             return ocr_image(image_path)
 
@@ -94,7 +98,7 @@ def ocr_image(image_path: Path) -> str:
     return result
 
 
-def filter_strings_with_alpha(strings_list):
+def _filter_strings_with_alpha(strings_list):
     # 使用正則表達式檢查字串是否包含字母
     pattern = re.compile(r'[a-zA-Z]')
     # 過濾列表，只保留包含字母的字串
@@ -102,16 +106,55 @@ def filter_strings_with_alpha(strings_list):
     return " ".join(filtered_list)
 
 
-def audio_to_text(audio_path: Path) -> dict:
+def audio_to_text(audio_path: Path) -> str:
     """
     - 使用 Azure AI Speech 的 Speech to Text 服務將音檔轉成文字
     - 將文字存入 dict
     :return: pages_data
 
     """
-    pass
+
+    if audio_path.suffix == '.mp3':
+        audio_path = _convert_mp3_to_wav(audio_path)
+
+    try:
+        # This example requires environment variables named "SPEECH_KEY" and "SPEECH_REGION"
+        speech_config = speechsdk.SpeechConfig(subscription=speech_key,
+                                               region=speech_region)
+        speech_config.speech_recognition_language = "en-US"
+
+        audio_config = speechsdk.audio.AudioConfig(filename=str(audio_path))
+
+        speech_recognizer = speechsdk.SpeechRecognizer(speech_config=speech_config, audio_config=audio_config)
+
+        speech_recognition_result = speech_recognizer.recognize_once_async().get()
+
+        if speech_recognition_result.reason == speechsdk.ResultReason.RecognizedSpeech:
+            logger.debug("Recognized: {}".format(speech_recognition_result.text))
+            return speech_recognition_result.text
+
+        if speech_recognition_result.reason == speechsdk.ResultReason.NoMatch:
+            logger.warning("No speech could be recognized: {}".format(speech_recognition_result.no_match_details))
+        elif speech_recognition_result.reason == speechsdk.ResultReason.Canceled:
+            cancellation_details = speech_recognition_result.cancellation_details
+            logger.error("Speech Recognition canceled: {}".format(cancellation_details.reason))
+            if cancellation_details.reason == speechsdk.CancellationReason.Error:
+                logger.error("Error details: {}".format(cancellation_details.error_details))
+                logger.error("Did you set the speech resource key and region values?")
+        return ""
+
+    except Exception as e:
+        logger.error(e)
+
+
+def _convert_mp3_to_wav(audio_path: Path) -> Path:
+    sound = AudioSegment.from_mp3(str(audio_path))
+    sound.export(audio_path.with_suffix('.wav'), format="wav", bitrate="128k")
+    return audio_path.with_suffix('.wav')
 
 
 if __name__ == "__main__":
     # ocr_image(Path("temp/images/image0001-01.jpg"))
-    ocr_image(Path("../temp/images/image0001-08.jpg"))
+    # ocr_image(Path("../temp/images/image0001-08.jpg"))
+
+    audio_to_text(Path("/Users/oud/Documents/cht-pdf-to-mp4/data/input/Pete in the Postbox/音檔/6.mp3"))

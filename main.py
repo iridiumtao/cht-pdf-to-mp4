@@ -35,6 +35,8 @@ def process_ebook(ebook_path: Path, temp_dir: Path, output_dir: Path):
                 "image_file": str(image_path),
             })
 
+        with open(f'{output_dir}/data.json', 'w') as f:
+            logger.info(json.dump(pages_data, f, indent=4))
         logger.info(json.dumps(pages_data, indent=4))
         #
         # # 語音辨識
