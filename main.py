@@ -3,7 +3,7 @@ from pathlib import Path
 import json
 from tqdm import tqdm
 from loguru import logger
-from cht_pdf_to_mp4.file_reader import search_dir_and_copy_to_temp
+from cht_pdf_to_mp4.file_reader import search_dir_and_copy_to_temp, get_audio_length
 from cht_pdf_to_mp4.pdf_tool import pdf_to_images
 from cht_pdf_to_mp4.azure_tool import ocr_image, audio_to_text
 from cht_pdf_to_mp4.text_matcher import text_similarity_checker
@@ -15,11 +15,9 @@ import shutil
 def process_ebook(ebook_path: Path, temp_dir: Path, output_dir: Path):
     try:
         # 定義資料夾路徑
-        search_dir_and_copy_to_temp(ebook_path, temp_dir)
-        search_dir_and_copy_to_temp(ebook_path, temp_dir)
+        temp_file = search_dir_and_copy_to_temp(ebook_path, temp_dir)
 
         # 轉換PDF為圖片
-
         all_images = pdf_to_images(pdf_dir=temp_dir / "pdf", temp_dir=temp_dir)
 
         logger.debug(all_images)
@@ -30,25 +28,29 @@ def process_ebook(ebook_path: Path, temp_dir: Path, output_dir: Path):
         for image_path in all_images:
             ocr_result = ocr_image(image_path)
             pages_data["pages"].append({
-                "page_number": len(pages_data["pages"]) + 1,
+                "page_number": image_path[-6:-4],
                 "image_text": ocr_result,
                 "image_file": str(image_path),
             })
 
         with open(f'{output_dir}/data.json', 'w') as f:
-            logger.info(json.dump(pages_data, f, indent=4))
+            json.dump(pages_data, f, indent=4)
         logger.info(json.dumps(pages_data, indent=4))
-        #
-        # # 語音辨識
-        # for audio in audio_files:
-        #     audio_result = audio_to_text(audio)
-        #     audio_text = audio_result.get("text", "")
-        #     audio_length = audio_result.get("duration", 0)
-        #     pages_data["pages"].append({
-        #         "audio_text": audio_text,
-        #         "audio_file": str(audio),
-        #         "audio_length": audio_length,
-        #     })
+
+
+        # 語音辨識
+        for audio in temp_file.get("audio"):
+            audio_text = audio_to_text(audio)
+            # audio to text 步驟會生成 wav 檔，先暫時直接用
+            audio_length = get_audio_length(audio.with_suffix('.wav'))
+            pages_data["pages"].append({
+                "audio_text": audio_text,
+                "audio_file": str(audio),
+                "audio_length": audio_length,
+            })
+        with open(f'{output_dir}/data.json', 'w') as f:
+            json.dump(pages_data, f, indent=4)
+        logger.info(json.dumps(pages_data, indent=4))
         #
         # # 比對圖片文字與音檔文字
         # for page in pages_data["pages"]:
@@ -89,11 +91,12 @@ def main():
     ebooks = [d for d in input_dir.iterdir() if d.is_dir()]
 
     for ebook in tqdm(ebooks, desc="Processing eBooks"):
+        ebook_name = ebook.name
         if temp_dir.exists():
             # 刪除資料夾內的所有檔案
             shutil.rmtree('temp')
 
-        process_ebook(ebook, temp_dir, output_dir)
+        process_ebook(ebook, temp_dir, output_dir / ebook_name)
 
 
 if __name__ == "__main__":

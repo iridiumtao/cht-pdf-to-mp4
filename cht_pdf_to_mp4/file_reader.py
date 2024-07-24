@@ -3,13 +3,18 @@ from pathlib import Path
 from cht_pdf_to_mp4.exception import FileNotFoundError, InvalidFileError
 from loguru import logger
 
+import wave
 
-def search_dir_and_copy_to_temp(ebook_path: Path, temp_path: Path) -> Path:
+
+def search_dir_and_copy_to_temp(ebook_path: Path, temp_path: Path) -> dict:
     """
     - 直接搜尋副檔名為pdf和mp3(不分大小寫)的檔案，抓取資料夾內的有效PDF和音檔
     - 篩選檔案大小大於2KB的PDF和音檔
     - 將找到的檔案複製到 temp/pdf 和 temp/audio 中
-    :return: temp path
+    :return: {
+            "pdf": copied_pdf_paths,
+            "audio": copied_audio_paths
+        }
     """
     try:
         pdf_files = []
@@ -38,13 +43,41 @@ def search_dir_and_copy_to_temp(ebook_path: Path, temp_path: Path) -> Path:
 
         logger.debug(f"Copying PDF and audio to '{str(temp_path)}'")
 
-        # 複製文件到臨時目錄
-        for pdf in pdf_files:
-            shutil.copy(pdf, temp_pdf_path / "pdf.pdf")
-        for audio in audio_files:
-            shutil.copy(audio, temp_audio_path / audio.name)
+        # 複製文件到臨時目錄並收集新的路徑
+        copied_pdf_paths = []
+        copied_audio_paths = []
 
-        return temp_path
+        for pdf in pdf_files:
+            dest_pdf_path = temp_pdf_path / pdf.name
+            shutil.copy(pdf, dest_pdf_path)
+            copied_pdf_paths.append(str(dest_pdf_path))
+
+        for audio in audio_files:
+            dest_audio_path = temp_audio_path / audio.name
+            shutil.copy(audio, dest_audio_path)
+            copied_audio_paths.append(str(dest_audio_path))
+
+        return {
+                "pdf": copied_pdf_paths,
+                "audio": copied_audio_paths
+        }
 
     except Exception as e:
         raise InvalidFileError(f"Error reading directory '{ebook_path}': {e}")
+
+
+def get_audio_length(audio_path: Path) -> float:
+    """
+    取得WAV音檔的長度（秒）。
+
+    :param audio_path: WAV音檔的路徑
+    :return: 音檔長度（秒）
+    """
+    try:
+        with wave.open(str(audio_path), 'rb') as wav_file:
+            frames = wav_file.getnframes()
+            rate = wav_file.getframerate()
+            duration = frames / float(rate)
+            return duration
+    except wave.Error as e:
+        raise ValueError(f"Error reading WAV file '{audio_path}': {e}")
