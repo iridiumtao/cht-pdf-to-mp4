@@ -80,7 +80,7 @@ def ocr_image(image_path: Path) -> str:
 
             result = _filter_strings_with_alpha(results)
 
-            logger.debug(f"OCR Result {image_path[-6:-4]}: {result}")
+            logger.debug(f"OCR Result {str(image_path)[-6:-4]}: {result}")
         except ComputerVisionOcrErrorException as e:
             logger.error(e)
             logger.info(e.response)

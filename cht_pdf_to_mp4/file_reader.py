@@ -1,17 +1,19 @@
 import shutil
 from pathlib import Path
+from typing import List, Tuple, Union
 from cht_pdf_to_mp4.exception import FileNotFoundError, InvalidFileError
 from loguru import logger
+import re
 
 import wave
 
 
-def search_dir_and_copy_to_temp(ebook_path: Path, temp_path: Path) -> ([Path], [Path]):
+def search_dir_and_copy_to_temp(ebook_path: Path, temp_path: Path) -> Tuple[List[Path], List[Path]]:
     """
     - 直接搜尋副檔名為pdf和mp3(不分大小寫)的檔案，抓取資料夾內的有效PDF和音檔
     - 篩選檔案大小大於2KB的PDF和音檔
     - 將找到的檔案複製到 temp/pdf 和 temp/audio 中
-    :return: ([pdf file paths], [audio file paths])
+    :return: (List[pdf file paths], List[audio file paths])
     """
     try:
         pdf_files = []
@@ -54,6 +56,8 @@ def search_dir_and_copy_to_temp(ebook_path: Path, temp_path: Path) -> ([Path], [
             shutil.copy(audio, dest_audio_path)
             copied_audio_paths.append(Path(dest_audio_path))
 
+        copied_audio_paths.sort(key=lambda x: int(re.search(r'\d+', x.stem).group()))
+
         return copied_pdf_paths, copied_audio_paths
 
     except Exception as e:
@@ -75,3 +79,19 @@ def get_audio_length(audio_path: Path) -> float:
             return duration
     except wave.Error as e:
         raise ValueError(f"Error reading WAV file '{audio_path}': {e}")
+
+
+def get_files_with_suffix(directory: Path, suffix: str = "") -> List[Path]:
+    """
+    獲取指定資料夾內所有副檔名為指定值的檔案路徑。
+
+    :param directory: 目標資料夾的路徑
+    :param suffix: 目標檔案的副檔名（例如 '.txt' 或 '.pdf'）
+    :return: 符合條件的檔案路徑列表
+    """
+    try:
+        # 使用rglob來搜尋目標副檔名的檔案
+        files = [file for file in directory.rglob(f'*{suffix}') if file.is_file()]
+        return files
+    except Exception as e:
+        raise InvalidFileError(f"Error getting files with suffix '{suffix}' in directory '{directory}': {e}")

@@ -4,6 +4,8 @@ from pdf2image import convert_from_path
 from loguru import logger
 import cv2
 import numpy as np
+from typing import List
+import re
 
 
 def is_blank_image(image_path: Path) -> bool:
@@ -20,7 +22,7 @@ def is_blank_image(image_path: Path) -> bool:
         return False
 
 
-def pdf_to_images(pdf_paths: [str], temp_dir: Path) -> [str]:
+def pdf_to_images(pdf_paths: List[Path], temp_dir: Path) -> List[Path]:
     """
     1. 創一個新資料夾 images
     2. 把PDF轉成圖片檔存入 images
@@ -57,4 +59,4 @@ def pdf_to_images(pdf_paths: [str], temp_dir: Path) -> [str]:
     # 將檔名存為陣列，以檔名 alphabetical, 數字 小到大排序（00視為0）
     valid_image_names.sort(key=lambda x: (x.stem.split('-')[0], int(x.stem.split('-')[1])))
 
-    return [str(image) for image in valid_image_names]
+    return [Path(image) for image in valid_image_names]

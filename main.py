@@ -3,7 +3,7 @@ from pathlib import Path
 import json
 from tqdm import tqdm
 from loguru import logger
-from cht_pdf_to_mp4.file_reader import search_dir_and_copy_to_temp, get_audio_length
+from cht_pdf_to_mp4.file_reader import search_dir_and_copy_to_temp, get_audio_length, get_files_with_suffix
 from cht_pdf_to_mp4.pdf_tool import pdf_to_images
 from cht_pdf_to_mp4.azure_tool import ocr_image, audio_to_text
 from cht_pdf_to_mp4.text_matcher import text_similarity_checker
@@ -17,17 +17,20 @@ def process_ebook(ebook_path: Path, temp_dir: Path, output_dir: Path):
         # 定義資料夾路徑
         pdf_paths, audio_paths = search_dir_and_copy_to_temp(ebook_path, temp_dir)
 
-        # 轉換PDF為圖片
-        all_images = pdf_to_images(pdf_paths=pdf_paths, temp_dir=temp_dir)
+        if not (temp_dir / "images").exists():
+            # 轉換PDF為圖片
+            all_images = pdf_to_images(pdf_paths=pdf_paths, temp_dir=temp_dir)
+        else:
+            all_images = get_files_with_suffix((temp_dir / "images"), "jpg")
 
         logger.debug(all_images)
 
         # OCR圖片
-        pages_data = {"pages": []}
+        image_data = {"image": []}
         for image_path in all_images:
             ocr_result = ocr_image(image_path)
-            pages_data["pages"].append({
-                "page_number": image_path[-6:-4],
+            image_data["image"].append({
+                "page_number": str(image_path)[-6:-4],
                 "image_text": ocr_result,
                 "image_file": str(image_path),
             })
@@ -37,27 +40,29 @@ def process_ebook(ebook_path: Path, temp_dir: Path, output_dir: Path):
 
         output_file = output_dir / 'image.json'
         with open(output_file, 'w+') as f:
-            json.dump(pages_data, f, indent=4)
-        logger.info(json.dumps(pages_data, indent=4))
+            json.dump(image_data, f, indent=4)
+        logger.info(json.dumps(image_data, indent=4))
 
 
         # 語音辨識
+        speech_data = {"speech": []}
         for audio in audio_paths:
             audio_text = audio_to_text(audio)
             # audio to text 步驟會生成 wav 檔，先暫時直接用
             audio_length = get_audio_length(audio.with_suffix('.wav'))
-            pages_data["pages"].append({
-                "audio_text": audio_text,
+            speech_data["speech"].append({
+                "audio_number": audio.stem,
+                "speech_text": audio_text,
                 "audio_file": str(audio),
                 "audio_length": audio_length,
             })
         # 確保目錄存在
         output_dir.mkdir(parents=True, exist_ok=True)
 
-        output_file = output_dir / 'audio.json'
+        output_file = output_dir / 'speech.json'
         with open(output_file, 'w+') as f:
-            json.dump(pages_data, f, indent=4)
-        logger.info(json.dumps(pages_data, indent=4))
+            json.dump(speech_data, f, indent=4)
+        logger.info(json.dumps(speech_data, indent=4))
         #
         # # 比對圖片文字與音檔文字
         # for page in pages_data["pages"]:
