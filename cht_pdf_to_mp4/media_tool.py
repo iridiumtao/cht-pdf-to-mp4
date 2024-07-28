@@ -33,7 +33,11 @@ def create_video(pages_data: dict, output_path: Path):
     final_clip = concatenate_videoclips(clips, method="compose")
 
     # Write the result to a file
-    final_clip.write_videofile(str(output_path), threads=8, fps=30)
+    final_clip.write_videofile(str(output_path),
+                               threads=8,
+                               fps=5,
+                               codec='libx264',
+                               audio_codec='aac')
 
     logger.info("video created!")
 

@@ -1,4 +1,6 @@
 from pathlib import Path
+
+from cht_pdf_to_mp4.exception import SpeechRecognitionError
 from config.setting import get_settings
 
 from azure.cognitiveservices.vision.computervision import ComputerVisionClient
@@ -113,6 +115,7 @@ def audio_to_text(audio_path: Path) -> str:
     :return: pages_data
 
     """
+    retry_count = 0
 
     if audio_path.suffix == '.mp3':
         audio_path = _convert_mp3_to_wav(audio_path)
@@ -141,7 +144,12 @@ def audio_to_text(audio_path: Path) -> str:
             if cancellation_details.reason == speechsdk.CancellationReason.Error:
                 logger.error("Error details: {}".format(cancellation_details.error_details))
                 logger.error("Did you set the speech resource key and region values?")
-        return ""
+        logger.info("Will just retry")
+        retry_count += 1
+        if retry_count < 2:
+            return audio_to_text(audio_path)
+        else:
+            raise SpeechRecognitionError(audio_path, error_message="See above.")
 
     except Exception as e:
         logger.error(e)

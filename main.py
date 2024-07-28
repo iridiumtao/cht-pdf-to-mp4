@@ -65,7 +65,7 @@ def process_ebook(ebook_path: Path, temp_dir: Path, output_dir: Path):
         logger.info(json.dumps(speech_data, indent=4))
 
         merged_result = merge_recognition_results(image_data, speech_data)
-        merged_dict = json.loads(merged_result, indent=4)
+        merged_dict = json.loads(merged_result)
 
         # 儲存結果到JSON
         with open(temp_dir / 'data.json', 'w', encoding='utf-8') as f:
@@ -74,7 +74,7 @@ def process_ebook(ebook_path: Path, temp_dir: Path, output_dir: Path):
         if not isinstance(merged_dict, dict) or not merged_result:
             raise VideoCreationError("merged_result JSON invalid or not generated.")
         # 創建影片
-        create_video(merged_result, output_dir / f"{ebook_path.name}.mp4")
+        create_video(merged_dict, output_dir / f"{ebook_path.name}.mp4")
 
     except (FileNotFoundError, InvalidFileError, OCRProcessingError,
             SpeechRecognitionError, TextMatchingError, VideoCreationError,
