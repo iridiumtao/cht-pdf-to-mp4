@@ -6,8 +6,8 @@ from loguru import logger
 from cht_pdf_to_mp4.file_reader import search_dir_and_copy_to_temp, get_audio_length, get_files_with_suffix
 from cht_pdf_to_mp4.pdf_tool import pdf_to_images
 from cht_pdf_to_mp4.azure_tool import ocr_image, audio_to_text
-from cht_pdf_to_mp4.text_matcher import text_similarity_checker
-from cht_pdf_to_mp4.media_tool import create_video, merge_audio_video
+from cht_pdf_to_mp4.text_matcher import merge_recognition_results
+from cht_pdf_to_mp4.media_tool import create_video
 from cht_pdf_to_mp4.exception import *
 import shutil
 
@@ -63,24 +63,18 @@ def process_ebook(ebook_path: Path, temp_dir: Path, output_dir: Path):
         with open(output_file, 'w+') as f:
             json.dump(speech_data, f, indent=4)
         logger.info(json.dumps(speech_data, indent=4))
-        #
-        # # 比對圖片文字與音檔文字
-        # for page in pages_data["pages"]:
-        #     if "audio_text" in page and "image_text" in page:
-        #         matched_text = text_similarity_checker(page["audio_text"], page["image_text"])
-        #         page["matched_text"] = matched_text
-        #
-        # # 儲存結果到JSON
-        # with open(temp_dir / 'pages_data.json', 'w', encoding='utf-8') as f:
-        #     json.dump(pages_data, f, ensure_ascii=False, indent=4)
-        #
-        # # 創建影片
-        # create_video(pages_data, output_dir / f"{ebook_path.name}.mp4")
-        #
-        # # 合併影片和音檔
-        # merge_audio_video(output_dir / f"{ebook_path.name}.mp4")
-        #
-        # logger.info(f"{ebook_path.name} 轉換成功")
+
+        merged_result = merge_recognition_results(image_data, speech_data)
+        merged_dict = json.loads(merged_result, indent=4)
+
+        # 儲存結果到JSON
+        with open(temp_dir / 'data.json', 'w', encoding='utf-8') as f:
+            json.dump(merged_dict, f, ensure_ascii=False, indent=4)
+
+        if not isinstance(merged_dict, dict) or not merged_result:
+            raise VideoCreationError("merged_result JSON invalid or not generated.")
+        # 創建影片
+        create_video(merged_result, output_dir / f"{ebook_path.name}.mp4")
 
     except (FileNotFoundError, InvalidFileError, OCRProcessingError,
             SpeechRecognitionError, TextMatchingError, VideoCreationError,

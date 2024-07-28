@@ -6,6 +6,10 @@ class Settings(BaseSettings):
     vision_endpoint: str
     speech_key: str
     speech_region: str
+    azure_openai_api_key: str
+    azure_openai_endpoint: str
+    ebook_openai_api_key: str
+
 
     class Config:
         env_file = ".env"
