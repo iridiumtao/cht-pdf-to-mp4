@@ -108,14 +108,13 @@ def _filter_strings_with_alpha(strings_list):
     return " ".join(filtered_list)
 
 
-def audio_to_text(audio_path: Path) -> str:
+def audio_to_text(audio_path: Path, retry_count=0) -> str | None:
     """
     - 使用 Azure AI Speech 的 Speech to Text 服務將音檔轉成文字
     - 將文字存入 dict
     :return: pages_data
 
     """
-    retry_count = 0
 
     if audio_path.suffix == '.mp3':
         audio_path = _convert_mp3_to_wav(audio_path)
@@ -138,16 +137,17 @@ def audio_to_text(audio_path: Path) -> str:
 
         if speech_recognition_result.reason == speechsdk.ResultReason.NoMatch:
             logger.warning("No speech could be recognized: {}".format(speech_recognition_result.no_match_details))
+            return None
         elif speech_recognition_result.reason == speechsdk.ResultReason.Canceled:
             cancellation_details = speech_recognition_result.cancellation_details
             logger.error("Speech Recognition canceled: {}".format(cancellation_details.reason))
             if cancellation_details.reason == speechsdk.CancellationReason.Error:
                 logger.error("Error details: {}".format(cancellation_details.error_details))
                 logger.error("Did you set the speech resource key and region values?")
-        logger.info("Will just retry")
+        logger.info(f"Will just retry ({retry_count})")
         retry_count += 1
         if retry_count < 2:
-            return audio_to_text(audio_path)
+            return audio_to_text(audio_path, retry_count)
         else:
             raise SpeechRecognitionError(audio_path, error_message="See above.")
 
